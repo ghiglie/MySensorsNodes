@@ -1,0 +1,119 @@
+// General settings
+#define SKETCH_NAME "GarageLibrary"
+#define SKETCH_VERSION "2.1"
+#define MY_BAUD_RATE 9600
+#define MY_NODE_ID 2
+
+#define MY_RADIO_NRF24
+#define MY_SIGNAL_REPORT_ENABLED
+
+#define MY_SPLASH_SCREEN_DISABLED
+
+//#define MY_TRANSPORT_UPLINK_CHECK_DISABLED
+#define MY_TRANSPORT_WAIT_READY_MS  5000
+#define MY_SLEEP_TRANSPORT_RECONNECT_TIMEOUT_MS 2000
+//#define MY_PARENT_NODE_ID 0
+//#define MY_PARENT_NODE_IS_STATIC
+
+#define NODEMANAGER_DEBUG ON //
+#define NODEMANAGER_DEBUG_VERBOSE OFF
+#define NODEMANAGER_SLEEP ON //
+#define NODEMANAGER_RECEIVE OFF
+#define NODEMANAGER_POWER_MANAGER OFF
+#define NODEMANAGER_CONDITIONAL_REPORT OFF //
+#define NODEMANAGER_INTERRUPTS ON //
+#define NODEMANAGER_EEPROM OFF
+#define NODEMANAGER_TIME OFF
+#define NODEMANAGER_RTC OFF
+#define NODEMANAGER_SD OFF
+#define NODEMANAGER_HOOKING OFF
+#define NODEMANAGER_OTA_CONFIGURATION OFF
+#define NODEMANAGER_SERIAL_INPUT OFF
+
+#define NODEMANAGER_SENSOR_BOSCH_LITE ON
+
+#include <MySensors_NodeManager.h>
+
+// BME280
+#include <sensors/SensorBME280.h>
+//#define BME280_ADDRESS (0x77)
+//#define CHILD_ID_AMBIENT 1
+SensorBME280 ambient;
+
+// PIR on D3 (optional build, PIN_PD3 is defined in MiniCore)
+#include <sensors/SensorMotion.h>
+SensorMotion pir(PIN_PD3);
+
+// Battery Level (default child_id 201)
+#include <sensors/SensorBattery.h>
+SensorBattery battery;
+
+// Radio Signal Quality (default child_id 202)
+#include <sensors/SensorSignal.h>
+SensorSignal signal;
+
+// before
+void before() {
+  
+  // let controller know ambient pressure sensor reports in hPa
+  ambient.children.get(3)->setUnitPrefix("hPa");
+   
+  // send unit prefixes to controller (i.e. V, A, hPa, %, etc.)
+  nodeManager.setSendUnitPrefix(true);
+
+  // battery level - BOD set to 1.8V, 2xAA = 3V max
+  battery.setMinVoltage(1.8);
+  battery.setMaxVoltage(3.0);
+
+  // sleep cycle
+  nodeManager.setSleepMinutes(60);
+  // 500ms to let the transport send all buffer before sleeping.
+  nodeManager.setSleepBetweenSend(500);
+  
+  // report freq for ambient measurements
+  ambient.setReportIntervalMinutes(60);
+
+  // report freq for battery
+  battery.setReportIntervalDays(1);
+
+  // report freq for radio signal - pseudo SR_TX_RSSI and SR_UPLINK_QUALITY are available for NRF24
+  signal.setReportIntervalDays(1);
+  signal.setSignalCommand(SR_UPLINK_QUALITY);
+
+  // call NodeManager before routine
+  nodeManager.before();
+}
+
+// presentation
+void presentation() {
+  // call NodeManager presentation routine
+  nodeManager.presentation();
+}
+
+// setup
+void setup() {
+  // call NodeManager setup routine
+  nodeManager.setup();
+}
+
+// loop
+void loop() {
+  // call NodeManager loop routine
+  nodeManager.loop();
+}
+
+#if NODEMANAGER_RECEIVE == ON
+// receive
+void receive(const MyMessage &message) {
+  // call NodeManager receive routine
+  nodeManager.receive(message);
+}
+#endif
+
+#if NODEMANAGER_TIME == ON
+// receiveTime
+void receiveTime(unsigned long ts) {
+  // call NodeManager receiveTime routine
+  nodeManager.receiveTime(ts);
+}
+#endif
